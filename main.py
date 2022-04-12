@@ -5,12 +5,15 @@ import math
 import random
 
 import discord
-import youtube_dl
+import yt_dlp
 from async_timeout import timeout
 from discord.ext import commands
 
-youtube_dl.utils.bug_reports_message = lambda: ''  # idk, its just bug reports :)
+import config
+
+yt_dlp.utils.bug_reports_message = lambda: ''  # idk, its just bug reports :)
 is_d = False
+
 
 class VoiceError(Exception):
     pass
@@ -42,7 +45,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'options': '-vn',
     }
 
-    ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
+    ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 
     def __init__(self, ctx: commands.Context, source: discord.FFmpegPCMAudio, *, data: dict, volume: float = 0.5):
         super().__init__(source, volume)
@@ -281,7 +284,7 @@ class Music(commands.Cog):
     @commands.command(name='join', invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
         """Enters the current voice channel."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to join the voice channel.')
         destination = ctx.author.voice.channel
         if ctx.voice_state.voice:
             await ctx.voice_state.voice.move_to(destination)
@@ -295,7 +298,7 @@ class Music(commands.Cog):
         """Moves the bot to the current voice channel.
         If not yet connected to the channel, connects to it.
         """
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to summon the bot to {channel}')
         if not channel and not ctx.author.voice:
             raise VoiceError('You are not connected to a voice channel.')
 
@@ -310,7 +313,7 @@ class Music(commands.Cog):
     #@commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and exits the voice channel."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to leave the voice channel.')
         if not ctx.voice_state.voice:
             return await ctx.send('The bot is not connected.')
 
@@ -320,7 +323,7 @@ class Music(commands.Cog):
     @commands.command(name='vol')
     async def _vol(self, ctx: commands.Context, *, volume: int):
         """Adjusts the playback volume."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to change volume to {volume}')
         if not ctx.voice_state.is_playing:
             return await ctx.send('Now the music is not playing.')
 
@@ -333,13 +336,13 @@ class Music(commands.Cog):
     @commands.command(name='now', aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Shows the current track."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested now')
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
     @commands.command(name='pause')
     async def _pause(self, ctx: commands.Context):
         """Pauses song playback."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested pause')
         if ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
             ctx.voice_state.voice.pause()
             await ctx.message.add_reaction('⏯')
@@ -347,7 +350,7 @@ class Music(commands.Cog):
     @commands.command(name='resume')
     async def _resume(self, ctx: commands.Context):
         """Continues playing the song."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested resume')
         if ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
             ctx.voice_state.voice.resume()
             await ctx.message.add_reaction('⏯')
@@ -368,7 +371,7 @@ class Music(commands.Cog):
         """Vote to skip a song.
         It takes three votes to pass.
         """
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to skip the song.')
         if not ctx.voice_state.is_playing:
             return await ctx.send('Now the music is not playing.')
 
@@ -405,7 +408,7 @@ class Music(commands.Cog):
         """Shows the playback queue.
        You can choose one of the pages, each can have up to 10 items.
         """
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested queue page.')
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Queue is empty.')
 
@@ -436,7 +439,7 @@ class Music(commands.Cog):
     @commands.command(name='remove')
     async def _remove(self, ctx: commands.Context, index: int):
         """Removes a track from the queue by the entered number."""
-
+        print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to remove track.')
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Queue is empty.')
 
@@ -464,7 +467,7 @@ class Music(commands.Cog):
         if is_d:
             await ctx.send("Warning, code distribution detected! Bot is out of service!")
         else:
-            print(f"[BOT #{ctx.message.author.voice.channel}] - request in process")
+            print(f'[BOT {ctx.guild.id}] {ctx.message.author} requested to play: {search}')
             if not ctx.voice_state.voice:
                 await ctx.invoke(self._join)
 
@@ -499,4 +502,4 @@ async def on_ready():
     print('[BOT] - logged in as: {0.user.name} || {0.user.id}'.format(bot))
     await bot.change_presence(activity=discord.Game(name="music || !chelp"))
 
-bot.run('OTE1OTc2OTg4MTgxNzk0OTI3.YajcDA.Da4961X-0MRAMSM4GNkYedlFQpY')
+bot.run(config.token)
